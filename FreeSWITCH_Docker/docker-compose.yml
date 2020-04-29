@@ -1,0 +1,44 @@
+version: '3.1'
+
+services:
+    pgsql:
+        build: './pgsql'
+        container_name: pgsql
+        labels:
+          NAME: "pgsql"
+        restart: always
+        volumes:
+           - /root/voip/fs/pg_data:/var/lib/postgresql/data
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U postgres"]
+          interval: 10s
+          timeout: 5s
+          retries: 10
+        environment:
+          - "DB_USER=fsuser"
+          - "DB_PASSWORD=pr0c@lld@t@b@s3"
+          - "DB_DATABASE=fsdb"
+          - "POSTGRES_PASSWORD=str0ngp@ss"
+        ports:
+          - "5432:5432"
+        
+    freeswitch:
+       build: ./freeswitch
+      #  image: graypit/freeswitch:latest
+       container_name: freeswitch
+       labels:
+          NAME: "freeswitch"
+       network_mode: "host"               
+       restart: always
+       healthcheck:
+         test: ["CMD", "nc", "-z", "localhost", "8021"]
+         interval: 10s
+         timeout: 5s
+         retries: 10
+       depends_on:
+          - pgsql
+       volumes:
+          - '/root/voip/fs/conf:/etc/freeswitch/'
+          - '/root/voip/fs/records:/var/lib/freeswitch/recordings/'
+          - '/root/voip/fs/scripts:/usr/share/freeswitch/scripts/'
+          - '/root/voip/fs/logs:/var/log/freeswitch/'
